@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.base.mapper.UserFileMapper" >
+  <resultMap id="BaseResultMap" type="com.xmg.p2p.base.domain.UserFile" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="state" property="state" jdbcType="TINYINT" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+    <result column="auditTime" property="auditTime" jdbcType="TIMESTAMP" />
+    <result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+
+    <result column="score" property="score" jdbcType="TINYINT" />
+    <result column="image" property="image" jdbcType="VARCHAR" />
+  </resultMap>
+
+    <resultMap id="query_Map" type="com.xmg.p2p.base.domain.UserFile">
+        <id column="uf_id" property="id"/>
+        <result column="uf_state" property="state"/>
+        <result column="uf_score" property="score"/>
+        <association property="applier" javaType="Logininfo">
+            <result column="ap_username" property="username"/>
+        </association>
+        <association property="auditor" javaType="Logininfo">
+            <result column="au_username" property="username"/>
+        </association>
+        <association property="fileType" javaType="SystemDictionary">
+            <result column="item_title" property="title"/>
+        </association>
+
+    </resultMap>
+
+
+    <resultMap id="queryResultMap" type="com.xmg.p2p.base.domain.UserFile" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="state" property="state" jdbcType="TINYINT" />
+        <result column="remark" property="remark" jdbcType="VARCHAR" />
+        <result column="auditTime" property="auditTime" jdbcType="TIMESTAMP" />
+        <result column="applyTime" property="applyTime" jdbcType="TIMESTAMP" />
+        <result column="score" property="score" jdbcType="TINYINT" />
+        <result column="image" property="image" jdbcType="VARCHAR" />
+
+        <association property="applier" javaType="Logininfo">
+            <result column="applier_id" property="id"/>
+        </association>
+        <association property="fileType" javaType="SystemDictionary">
+            <result column="fileType_id" property="id"/>
+        </association>
+    </resultMap>
+  <insert id="insert" parameterType="com.xmg.p2p.base.domain.UserFile" useGeneratedKeys="true" keyProperty="id" >
+    insert into `userfile` (state, remark, auditTime,
+      applyTime, auditor_id, applier_id, 
+      score, image, fileType_id
+      )
+    values (#{state,jdbcType=TINYINT}, #{remark,jdbcType=VARCHAR}, #{auditTime,jdbcType=TIMESTAMP},
+      #{applyTime,jdbcType=TIMESTAMP}, #{auditor.id,jdbcType=BIGINT}, #{applier.id,jdbcType=BIGINT},
+      #{score,jdbcType=TINYINT}, #{image,jdbcType=VARCHAR}, #{fileType.id,jdbcType=BIGINT}
+      )
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.xmg.p2p.base.domain.UserFile" >
+    update `userfile`
+    set state = #{state,jdbcType=TINYINT},
+      remark = #{remark,jdbcType=VARCHAR},
+      auditTime = #{auditTime,jdbcType=TIMESTAMP},
+      applyTime = #{applyTime,jdbcType=TIMESTAMP},
+      auditor_id = #{auditor.id,jdbcType=BIGINT},
+      applier_id = #{applier.id,jdbcType=BIGINT},
+      score = #{score,jdbcType=TINYINT},
+      image = #{image,jdbcType=VARCHAR},
+      fileType_id = #{fileType.id,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateFileTypeId">
+    UPDATE userfile
+    SET fileType_id = #{fileType}
+    where id = #{id}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="queryResultMap" parameterType="java.lang.Long" >
+    select id, state, remark, auditTime, applyTime, auditor_id, applier_id, score, image, 
+    fileType_id
+    from `userfile`
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select id, state, remark, auditTime, applyTime, auditor_id, applier_id, score, image, 
+    fileType_id
+    from `userfile`
+  </select>
+  <resultMap id="userFile_Map" type="com.xmg.p2p.base.domain.UserFile">
+    <id column="uf_id" property="id"/>
+    <result column="image" property="image"/>
+    <result column="score" property="score"/>
+    <result column="uf.state" property="state"/>
+    <association property="fileType" javaType="SystemDictionary">
+      <id column="item_id" property="id"/>
+      <result column="title" property="title"/>
+    </association>
+  </resultMap>
+  <select id="selectUserFile" resultMap="userFile_Map">
+    SELECT
+    uf.id AS uf_id,
+    image,
+    item.id as item_id,
+    item.title AS title,
+    score,
+    uf.state
+    FROM
+    userfile uf
+    LEFT JOIN logininfo ap ON uf.applier_id = ap.id
+    LEFT JOIN systemdictionaryitem item ON item.id = uf.fileType_id
+    WHERE
+        uf.applier_id = #{loginInfoId}
+        <if test="fileTypeIsNull">
+          AND fileType_id is null
+        </if>
+  </select>
+
+    <sql id="base_where">
+        <where>
+            <if test="beginDate !=null">
+                AND applyTime &gt; #{beginDate}
+            </if>
+            <if test="endDate != null">
+                AND applyTime &lt; #{endDate}
+            </if>
+            <if test="applierId!=null">
+                AND uf.applier_id = #{applierId}
+            </if>
+            <if test="state > -1">
+                AND uf.state = #{state}
+            </if>
+            AND uf.filetype_id is not null
+        </where>
+
+    </sql>
+
+    <select id="queryForCount" resultType="java.lang.Integer">
+        SELECT count(id) FROM userfile uf
+        <include refid="base_where"/>
+    </select>
+
+
+    <select id="query" resultMap="query_Map">
+        SELECT
+        uf.id AS uf_id,
+        uf.state AS uf_state,
+        uf.score as uf_score,
+        ap.username AS ap_username,
+        au.username AS au_username,
+        item.title AS item_title
+        FROM
+        userfile uf
+        LEFT JOIN logininfo ap ON uf.applier_id = ap.id
+        LEFT JOIN logininfo au ON uf.auditor_id = au.id
+        LEFT JOIN systemdictionaryitem item ON uf.fileType_id = item.id
+        <include refid="base_where"/>
+        <if test="pageSize!=-1">
+        limit #{start},#{pageSize}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xmg.p2p.base.mapper.IplogMapper" >
+  <resultMap id="BaseResultMap" type="com.xmg.p2p.base.domain.Iplog" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="ip" property="ip" jdbcType="VARCHAR" />
+    <result column="state" property="state" jdbcType="TINYINT" />
+    <result column="userName" property="username" jdbcType="VARCHAR" />
+    <result column="loginTime" property="logintime" jdbcType="TIMESTAMP" />
+    <result column="userType" property="userType" jdbcType="TINYINT" />
+
+  </resultMap>
+
+  <insert id="insert" parameterType="com.xmg.p2p.base.domain.Iplog" useGeneratedKeys="true" keyProperty="id" >
+    insert into `iplog` (ip, state, userName, 
+      loginTime,userType)
+    values (#{ip,jdbcType=VARCHAR}, #{state,jdbcType=TINYINT}, #{username,jdbcType=VARCHAR}, 
+      #{logintime,jdbcType=TIMESTAMP},#{userType})
+  </insert>
+
+
+  <sql id="base_column">
+    id, ip, state, userName, loginTime,userType
+  </sql>
+
+  <sql id="base_where">
+    <where>
+      <if test="beginDate!=null">
+        AND loginTime &gt;= #{beginDate}
+      </if>
+      <if test="endDate !=null">
+        AND loginTime &lt;= #{endDate}
+      </if>
+      <if test="state>-1">
+        AND state = #{state}
+      </if>
+      <if test="username!=null">
+        AND userName = #{username}
+      </if>
+      <if test="userType>-1">
+        AND userType = #{userType}
+      </if>
+    </where>
+
+  </sql>
+  <select id="queryForCount" resultType="java.lang.Integer">
+    SELECT COUNT(id)
+    FROM iplog
+    <include refid="base_where"></include>
+
+
+  </select>
+  <select id="query" resultType="com.xmg.p2p.base.domain.Iplog">
+    SELECT <include refid="base_column"></include>
+    FROM iplog
+    <include refid="base_where"></include>
+    ORDER BY loginTime DESC
+    LIMIT #{start},#{pageSize}
+  </select>
+
+
+</mapper>
